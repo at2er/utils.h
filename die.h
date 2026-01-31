@@ -11,12 +11,15 @@
 
 extern void die(const char *fmt, ...);
 
+#endif
+
 #ifdef UTILSH_DIE_IMPL
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-void die(const char *msg, ...)
+void
+die(const char *msg, ...)
 {
 	va_list ap;
 
@@ -27,5 +30,3 @@ void die(const char *msg, ...)
 	exit(1);
 }
 #endif /* UTILSH_DIE_IMPL */
-
-#endif

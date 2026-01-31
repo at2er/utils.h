@@ -30,6 +30,8 @@ extern struct str *str_append_str(struct str *dst, const struct str *src);
 /* @return: [s], if it succeeds, otherwise NULL. */
 extern struct str *str_empty(struct str *s);
 
+extern struct str *str_expand_siz(struct str *s, size_t more);
+
 /* Free content inside [s], but won't free itself. */
 extern void str_free(struct str *s);
 
@@ -86,6 +88,16 @@ str_empty(struct str *s)
 		return NULL;
 	s->s = NULL;
 	s->siz = s->len = 0;
+	return s;
+}
+
+struct str *
+str_expand_siz(struct str *s, size_t more)
+{
+	if (!s)
+		return NULL;
+	if (!str_realloc(s, s->len + more + 1))
+		return NULL;
 	return s;
 }
 

@@ -1,11 +1,13 @@
-# utils.h
 Some single-header only and public domain libraries for C.
 
-## darr.h
+# darr.h
 A small dynamic array implement by macro.
 
-## die.h
+# die.h
 End program by `exit(1)` and print some message to `stderr`.
 
-## macros.h
+# macros.h
 Some useful macros collection.
+
+# str.h
+An simple string implement.

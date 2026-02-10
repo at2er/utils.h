@@ -1,4 +1,4 @@
-Some single-header only and public domain libraries for C.
+Some single-header only and public domain or MIT licensed libraries for C.
 
 # darr.h
 A small dynamic array implement by macro.

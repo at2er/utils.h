@@ -7,7 +7,7 @@
  *               Don't generate auto error handle functions.
  *
  *     - #define UTILSH_STR_DIE <your error handle function call>
- *        default: exit(1)
+ *        default: abort()
  *
  */
 #ifndef UTILSH_STR_H
@@ -72,7 +72,7 @@ extern struct str *str_realloc(struct str *s, size_t siz);
 #ifndef UTILSH_DISABLE_ESTR
 
 #ifndef UTILSH_STR_DIE
-#define UTILSH_STR_DIE exit(1)
+#define UTILSH_STR_DIE abort()
 #endif
 
 /* @return: [s] */

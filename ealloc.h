@@ -5,14 +5,14 @@
  * you should use Xalloc() from stdlib.h, not this.
  *
  * #define UTILSH_EALLOC_DIE <your error handle function call>
- *  default: exit(1)
+ *  default: abort()
  */
 #ifndef UTILSH_EALLOC_H
 #define UTILSH_EALLOC_H
 #include <stddef.h>
 
 #ifndef UTILSH_EALLOC_DIE
-#define UTILSH_EALLOC_DIE exit(1)
+#define UTILSH_EALLOC_DIE abort()
 #endif
 
 extern void *ecalloc(size_t n, size_t siz);

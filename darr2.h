@@ -3,8 +3,8 @@
  * @important: developing and very unstable.
  *
  * Just a dynamic array. */
-#ifndef UTILSH_DARR_H
-#define UTILSH_DARR_H
+#ifndef UTILSH_DARR2_H
+#define UTILSH_DARR2_H
 #include <stdlib.h>
 
 struct utilsh_darr_header_t {
@@ -31,7 +31,7 @@ struct utilsh_darr_header_t {
 		(DARR)[utilsh_darr_header(DARR)->len++] = (V); \
 	} while (0)
 
-#ifdef UTILSH_DARR_STRIP
+#ifdef UTILSH_DARR2_STRIP
 #define darr utilsh_darr
 #define darr_foreach utilsh_darr_foreach
 #define darr_header_t utilsh_darr_header_t

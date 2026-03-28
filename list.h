@@ -37,37 +37,58 @@ struct utilsh_list {
 	struct utilsh_list *nex;
 };
 
+struct utilsh_list_head {
+	struct utilsh_list *beg;
+	struct utilsh_list *end;
+};
+
 #define utilsh_list_container_of(PTR, STRUCT, MEMBER) \
 	(STRUCT*)((char*)(PTR) - offsetof(STRUCT, MEMBER))
 
 #define utilsh_list_for_each(TYPE, CUR, BEG, NEX, LINK) \
-	for (TYPE *CUR = utilsh_list_container_of((BEG)->prv, TYPE, LINK), \
-			*NEX = utilsh_list_container_of((CUR)->LINK.prv, TYPE, LINK); \
-			&CUR->LINK != (BEG); \
+	for (TYPE *CUR = utilsh_list_container_of((BEG), TYPE, LINK), \
+			*NEX = (CUR)->LINK.nex ? utilsh_list_container_of((CUR)->LINK.nex, TYPE, LINK) : NULL; \
+			CUR != NULL; \
 			CUR = NEX, \
-			NEX = utilsh_list_container_of((CUR)->LINK.prv, TYPE, LINK))
+			NEX = (CUR)->LINK.nex ? utilsh_list_container_of((CUR)->LINK.nex, TYPE, LINK) : NULL)
 
-void utilsh_list_init(struct utilsh_list *list);
-void utilsh_list_insert(struct utilsh_list *list, struct utilsh_list *elem);
+void utilsh_list_init(struct utilsh_list_head *list);
+void utilsh_list_insert(
+		struct utilsh_list_head *list,
+		struct utilsh_list *prv,
+		struct utilsh_list *elem);
 
 #endif
 
 #ifdef UTILSH_LIST_IMPL
+#include <assert.h>
 
 void
-utilsh_list_init(struct utilsh_list *list)
+utilsh_list_init(struct utilsh_list_head *list)
 {
-	list->prv = list;
-	list->nex = list;
+	list->beg = list->end = NULL;
 }
 
 void
-utilsh_list_insert(struct utilsh_list *list, struct utilsh_list *elem)
+utilsh_list_insert(
+		struct utilsh_list_head *list,
+		struct utilsh_list *prv,
+		struct utilsh_list *elem)
 {
-	elem->prv = list;
-	elem->nex = list->nex;
-	list->nex = elem;
-	elem->nex->prv = elem;
+	elem->prv = prv;
+	if (prv) {
+		elem->nex = prv->nex;
+		if (elem->nex)
+			elem->nex->prv = elem;
+		prv->nex = elem;
+	} else {
+		elem->nex = list->beg;
+		if (list->beg)
+			list->beg->prv = elem;
+		list->beg = elem;
+	}
+	if (prv == list->end)
+		list->end = elem;
 }
 
 #endif /* UTILSH_LIST_IMPL */

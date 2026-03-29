@@ -55,6 +55,11 @@ struct utilsh_list_head {
 			CUR = NEX, \
 			NEX = _utilsh_list_for_each_iter(CUR, TYPE, LINK))
 
+#define utilsh_list_for_each_unsafe(TYPE, CUR, BEG, NEX, LINK) \
+	for (TYPE *CUR = _utilsh_list_container_of((BEG), TYPE, LINK); \
+			CUR != NULL; \
+			CUR = _utilsh_list_for_each_iter(CUR, TYPE, LINK))
+
 void utilsh_list_init(struct utilsh_list_head *list);
 void utilsh_list_insert(
 		struct utilsh_list_head *list,

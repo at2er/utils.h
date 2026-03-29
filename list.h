@@ -42,15 +42,18 @@ struct utilsh_list_head {
 	struct utilsh_list *end;
 };
 
-#define utilsh_list_container_of(PTR, STRUCT, MEMBER) \
-	(STRUCT*)((char*)(PTR) - offsetof(STRUCT, MEMBER))
+#define _utilsh_list_container_of(PTR, STRUCT, MEMBER) \
+	((PTR) ? (STRUCT*)((char*)(PTR) - offsetof(STRUCT, MEMBER)) : NULL)
+
+#define _utilsh_list_for_each_iter(CUR, TYPE, LINK) \
+	(CUR ? _utilsh_list_container_of(CUR->LINK.nex, TYPE, LINK) : NULL)
 
 #define utilsh_list_for_each(TYPE, CUR, BEG, NEX, LINK) \
-	for (TYPE *CUR = utilsh_list_container_of((BEG), TYPE, LINK), \
-			*NEX = (CUR)->LINK.nex ? utilsh_list_container_of((CUR)->LINK.nex, TYPE, LINK) : NULL; \
+	for (TYPE *CUR = _utilsh_list_container_of((BEG), TYPE, LINK), \
+			*NEX = _utilsh_list_for_each_iter(CUR, TYPE, LINK); \
 			CUR != NULL; \
 			CUR = NEX, \
-			NEX = (CUR)->LINK.nex ? utilsh_list_container_of((CUR)->LINK.nex, TYPE, LINK) : NULL)
+			NEX = _utilsh_list_for_each_iter(CUR, TYPE, LINK))
 
 void utilsh_list_init(struct utilsh_list_head *list);
 void utilsh_list_insert(

@@ -9,6 +9,8 @@
  *     - #define UTILSH_STR_DIE <your error handle function call>
  *        default: abort()
  *
+ *     - #define UTILSH_STR_REMOVE_MIN <unsigned int> (impl)
+ *        default: 128
  */
 #ifndef UTILSH_STR_H
 #define UTILSH_STR_H
@@ -62,11 +64,35 @@ extern void str_free(struct str *s);
  * @return: [s], if it succeeds, otherwise NULL. */
 extern struct str *str_from_cstr(struct str *s, const char *cstr);
 
+/* Insert [cstr] to the content of [dst] before [pos].
+ * For example (not really code):
+ *     s = "co"
+ *          ^^
+ *          01
+ *     str_insert_cstr(s, 1, "iall");
+ *     s = "ciallo"
+ *          ^^^^^^
+ *          012345
+ *
+ * @return: [dst], if it succeeds, otherwise NULL. */
+extern struct str *str_insert_cstr(struct str *dst, size_t pos, const char *cstr);
+
+/* Like str_insert_cstr(), but insert with [str]
+ * to the content of [dst] before [pos].
+ *
+ * @return: [dst], if it succeeds, otherwise NULL. */
+extern struct str *str_insert_str(struct str *dst, size_t pos, struct str *str);
+
 /* Reallocate 's->s' and set 's->siz', if the [siz] > s->siz.
  * So if the [siz] is small than s->s, it won't be reallocated.
  *
  * @return: [s], if it succeeds, otherwise NULL. */
 extern struct str *str_realloc(struct str *s, size_t siz);
+
+/* Remove [len] from 's->s[pos]' (include 's->s[pos]').
+ *
+ * @return: [s], if it succeeds, otherwise NULL. */
+extern struct str *str_remove(struct str *s, size_t pos, size_t len);
 
 /* Like default str functions, but always call exit(1) when failed,
  * and their return value is always not NULL.
@@ -109,11 +135,20 @@ extern struct str *estr_expand_siz(struct str *s, size_t more);
  * @return: [s] */
 extern struct str *estr_from_cstr(struct str *s, const char *cstr);
 
+/* @return: [dst] */
+extern struct str *estr_insert_cstr(struct str *dst, size_t pos, const char *cstr);
+
+/* @return: [dst] */
+extern struct str *estr_insert_str(struct str *dst, size_t pos, struct str *str);
+
 /* Reallocate 's->s' and set 's->siz', if the [siz] > s->siz.
  * So if the [siz] is small than s->s, it won't be reallocated.
  *
  * @return: [s] */
 extern struct str *estr_realloc(struct str *s, size_t siz);
+
+/* @return: [s] */
+extern struct str *estr_remove(struct str *s, size_t pos, size_t len);
 
 #endif /* UTILSH_DISABLE_ESTR */
 
@@ -129,6 +164,10 @@ extern struct str *estr_realloc(struct str *s, size_t siz);
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef UTILSH_STR_REMOVE_MIN
+#define UTILSH_STR_REMOVE_MIN 128
+#endif
 
 /* @return: [s], if it succeeds, otherwise NULL. */
 struct str *
@@ -147,16 +186,13 @@ str_append_chr(struct str *dst, char c)
 struct str *
 str_append_cstr(struct str *dst, const char *cstr)
 {
-	size_t cstr_len;
-	if (!dst || !cstr)
+	struct str fake;
+	if (!cstr)
 		return NULL;
-	cstr_len = strlen(cstr);
-	if (!str_realloc(dst, dst->len + cstr_len + 1))
-		return NULL;
-	memcpy(&dst->s[dst->len], cstr, cstr_len);
-	dst->len += cstr_len;
-	dst->s[dst->len] = '\0';
-	return dst;
+	fake.s = (char*)cstr;
+	fake.len = strlen(cstr);
+	fake.siz = fake.len + 1;
+	return str_append_str(dst, &fake);
 }
 
 struct str *
@@ -223,6 +259,36 @@ str_from_cstr(struct str *s, const char *cstr)
 }
 
 struct str *
+str_insert_cstr(struct str *dst, size_t pos, const char *cstr)
+{
+	struct str fake;
+	if (!cstr)
+		return NULL;
+	fake.s = (char*)cstr;
+	fake.len = strlen(cstr);
+	fake.siz = fake.len + 1;
+	return str_insert_str(dst, pos, &fake);
+}
+
+struct str *
+str_insert_str(struct str *dst, size_t pos, struct str *str)
+{
+	if (!dst || !str)
+		return NULL;
+	if (str->len == 0)
+		return dst;
+	if (pos > dst->len)
+		return NULL;
+	if (!str_realloc(dst, dst->len + str->len + 1))
+		return NULL;
+	memmove(&dst->s[pos + str->len], &dst->s[pos], dst->len - pos);
+	memcpy(&dst->s[pos], str->s, str->len);
+	dst->len += str->len;
+	dst->s[dst->len] = '\0';
+	return dst;
+}
+
+struct str *
 str_realloc(struct str *s, size_t siz)
 {
 	if (!s)
@@ -231,6 +297,26 @@ str_realloc(struct str *s, size_t siz)
 		return s;
 	s->s = realloc(s->s, siz);
 	s->siz = siz;
+	return s;
+}
+
+struct str *
+str_remove(struct str *s, size_t pos, size_t len)
+{
+	/* TODO: UTILSH_STR_REMOVE_MIN */
+	if (!s)
+		return NULL;
+	if (pos > s->len)
+		return NULL;
+	s->len -= len;
+	/* helloworld
+	   0123456789
+	      ^^^
+	   hel   orld
+	   helorld
+	   0123456 */
+	memmove(&s->s[pos], &s->s[pos + len], s->len - pos);
+	s->s[s->len] = '\0';
 	return s;
 }
 
@@ -276,8 +362,20 @@ estr_from_cstr(struct str *s, const char *cstr)
 	T(str_from_cstr, s, cstr)
 
 struct str *
+estr_insert_cstr(struct str *dst, size_t pos, const char *cstr)
+	T(str_insert_cstr, dst, pos, cstr)
+
+struct str *
+estr_insert_str(struct str *dst, size_t pos, struct str *str)
+	T(str_insert_str, dst, pos, str)
+
+struct str *
 estr_realloc(struct str *s, size_t siz)
 	T(str_realloc, s, siz)
+
+struct str *
+estr_remove(struct str *s, size_t pos, size_t len)
+	T(str_remove, s, pos, len)
 
 #undef T
 

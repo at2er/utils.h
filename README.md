@@ -13,5 +13,8 @@ A doubly linked list implement from
 # macros.h
 Some useful macros collection.
 
+# stack.h
+A stack data structure implement by macro.
+
 # str.h
 An simple string implement.

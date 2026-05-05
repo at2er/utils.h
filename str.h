@@ -16,6 +16,7 @@
 #define UTILSH_STR_H
 #include <stddef.h>
 
+#define STR(CSTR, LEN) (struct str){(CSTR), (LEN), (LEN) + 1}
 /* Use this format macro for printf or else string format function
  * with STR_ARG() */
 #define STR_FMT "%.*s"
@@ -63,6 +64,11 @@ extern void str_free(struct str *s);
  *
  * @return: [s], if it succeeds, otherwise NULL. */
 extern struct str *str_from_cstr(struct str *s, const char *cstr);
+
+/* Copy [src] to [s].
+ *
+ * @return: [s], if it succeeds, otherwise NULL. */
+extern struct str *str_from_str(struct str *s, struct str *src);
 
 /* Insert [cstr] to the content of [dst] before [pos].
  * For example (not really code):
@@ -134,6 +140,11 @@ extern struct str *estr_expand_siz(struct str *s, size_t more);
  *
  * @return: [s] */
 extern struct str *estr_from_cstr(struct str *s, const char *cstr);
+
+/* Copy [src] to [s].
+ *
+ * @return: [s] */
+extern struct str *estr_from_str(struct str *s, struct str *src);
 
 /* @return: [dst] */
 extern struct str *estr_insert_cstr(struct str *dst, size_t pos, const char *cstr);
@@ -242,19 +253,32 @@ str_expand_siz(struct str *s, size_t more)
 void
 str_free(struct str *s)
 {
-	free(s->s);
+	if (s->s)
+		free(s->s);
 	str_empty(s);
 }
 
 struct str *
 str_from_cstr(struct str *s, const char *cstr)
 {
+	struct str fake;
 	if (!s || !cstr)
 		return NULL;
-	s->siz = strlen(cstr) + 1;
-	s->s   = malloc(s->siz);
+	fake.s = (char*)cstr;
+	fake.siz = strlen(cstr) + 1;
+	fake.len = fake.siz - 1;
+	return str_from_str(s, &fake);
+}
+
+struct str *
+str_from_str(struct str *s, struct str *src)
+{
+	if (!s || !src)
+		return NULL;
+	s->siz = src->len + 1;
+	s->s = malloc(s->siz);
 	s->len = s->siz - 1;
-	strcpy(s->s, cstr);
+	strncpy(s->s, src->s, s->siz);
 	return s;
 }
 
@@ -306,6 +330,8 @@ str_remove(struct str *s, size_t pos, size_t len)
 	/* TODO: UTILSH_STR_REMOVE_MIN */
 	if (!s)
 		return NULL;
+	if (len == 0)
+		return s;
 	if (pos > s->len)
 		return NULL;
 	s->len -= len;
@@ -360,6 +386,10 @@ estr_expand_siz(struct str *s, size_t more)
 struct str *
 estr_from_cstr(struct str *s, const char *cstr)
 	T(str_from_cstr, s, cstr)
+
+struct str *
+estr_from_str(struct str *s, struct str *src)
+	T(str_from_str, s, src)
 
 struct str *
 estr_insert_cstr(struct str *dst, size_t pos, const char *cstr)
